@@ -1,0 +1,464 @@
+/* tampilan tabel yang dipakai di beberapa halaman */
+.wadah {
+    font-family: inherit;
+    color: #0b0b0b;
+    font-size: 14px;
+}
+
+/* kotak pencarian */
+.atas {
+    display: flex;
+    margin-bottom: 14px;
+}
+
+.cari {
+    flex: 1;
+    min-width: 0;
+    height: 40px;
+    padding: 0 14px;
+    font: inherit;
+    font-size: 14px;
+    border: 1px solid #cfe9e4;
+    border-radius: 8px;
+    background: #ffffff;
+    outline: none;
+}
+
+.cari:focus {
+    border-color: #07706e;
+}
+
+/* tombol filter khusus ponsel, disembunyikan di layar lebar */
+.filter-ponsel {
+    display: none;
+}
+
+/* tabel bisa digeser ke samping kalau layarnya sempit */
+.pembungkus {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    min-width: var(--lebar-minimal, 0px);
+    border-collapse: separate;
+    border-spacing: 0 3px;
+    table-layout: fixed;
+}
+
+th {
+    background: #07706e;
+    color: #ffffff;
+    text-align: left;
+    font-weight: 700;
+    padding: 10px;
+}
+
+th:first-child {
+    border-radius: 8px 0 0 8px;
+}
+
+th:last-child {
+    border-radius: 0 8px 8px 0;
+}
+
+td {
+    padding: 8px 10px;
+    vertical-align: middle;
+    overflow-wrap: break-word;
+    line-height: 1.35;
+}
+
+td.kode {
+    white-space: nowrap;
+}
+
+td:first-child {
+    border-radius: 6px 0 0 6px;
+}
+
+td:last-child {
+    border-radius: 0 6px 6px 0;
+}
+
+.kanan {
+    text-align: right;
+}
+
+.tengah {
+    text-align: center;
+}
+
+/* warna baris sesuai kategori */
+tr.fast td {
+    background: #d3f2e6;
+}
+
+tr.slow td {
+    background: #fcecc5;
+}
+
+tr.non td {
+    background: #f9d9d8;
+}
+
+tr.netral td {
+    background: #ffffff;
+}
+
+.kelas {
+    font-weight: 800;
+}
+
+tr.fast .kelas {
+    color: #128a5f;
+}
+
+tr.slow .kelas {
+    color: #b07800;
+}
+
+tr.non .kelas {
+    color: #c0302f;
+}
+
+/* judul kolom yang bisa difilter */
+.judul-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: left;
+}
+
+.judul-filter.aktif {
+    text-decoration: underline;
+}
+
+.panah {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    flex: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid currentColor;
+}
+
+/* tombol di dalam baris tabel */
+.tombol-baris {
+    padding: 4px 10px;
+    border: 1px solid #07706e;
+    border-radius: 16px;
+    background: #ffffff;
+    color: #07706e;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.tombol-baris:hover {
+    background: #07706e;
+    color: #ffffff;
+}
+
+.kosong {
+    text-align: center;
+    padding: 24px;
+    color: #52514e;
+    background: #ffffff;
+}
+
+/* keterangan jumlah data dan tombol pindah halaman */
+.bawah {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.keterangan {
+    color: #52514e;
+    font-size: 13px;
+}
+
+.halaman {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.halaman button {
+    padding: 4px 10px;
+    border: 1px solid #cfe9e4;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #07706e;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.halaman button:disabled {
+    color: #b5c9c5;
+    cursor: default;
+}
+
+/* tombol ekspor di bawah tengah tabel */
+.area-ekspor {
+    display: flex;
+    justify-content: center;
+    margin-top: 28px;
+}
+
+.ekspor {
+    height: 40px;
+    padding: 0 28px;
+    border: none;
+    border-radius: 20px;
+    font: inherit;
+    font-weight: 600;
+    background: #1baf7a;
+    color: #ffffff;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.ekspor:hover {
+    background: #159567;
+}
+
+.ekspor:disabled {
+    background: #8fd3b9;
+    cursor: wait;
+}
+
+/* panel filter yang muncul di bawah judul kolom */
+.panel {
+    position: fixed;
+    z-index: 1000;
+    width: min(260px, calc(100vw - 16px));
+    box-sizing: border-box;
+    padding: 12px;
+    background: #ffffff;
+    color: #0b0b0b;
+    border: 1px solid #cfe9e4;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    font-size: 13px;
+}
+
+.panel[hidden] {
+    display: none;
+}
+
+.panel .cari-pilihan {
+    width: 100%;
+    box-sizing: border-box;
+    height: 32px;
+    padding: 0 10px;
+    margin-bottom: 8px;
+    border: 1px solid #cfe9e4;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 13px;
+    outline: none;
+}
+
+.panel .daftar {
+    max-height: 240px;
+    overflow-y: auto;
+    border-top: 1px solid #eef5f3;
+    padding-top: 6px;
+}
+
+.panel label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 2px;
+    cursor: pointer;
+}
+
+.panel label.semua {
+    font-weight: 700;
+}
+
+.panel input[type="checkbox"] {
+    accent-color: #07706e;
+}
+
+.panel .rentang {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 10px;
+    align-items: center;
+}
+
+.panel .rentang input {
+    min-width: 0;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid #cfe9e4;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 13px;
+    outline: none;
+}
+
+.panel .urut {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eef5f3;
+}
+
+.panel .urut button {
+    flex: 1;
+    padding: 5px 8px;
+    border: 1px solid #cfe9e4;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #07706e;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.panel .urut button.aktif {
+    background: #07706e;
+    border-color: #07706e;
+    color: #ffffff;
+}
+
+.panel .batas {
+    margin-top: 8px;
+    color: #52514e;
+    font-size: 12px;
+}
+
+.panel .ulang {
+    margin-top: 10px;
+    padding: 4px 12px;
+    border: 1px solid #cfe9e4;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #07706e;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* tampilan ponsel: setiap baris tabel berubah menjadi kartu */
+@media (max-width: 700px) {
+    .filter-ponsel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    .filter-ponsel .judul-filter {
+        padding: 6px 12px;
+        border: 1px solid #07706e;
+        border-radius: 16px;
+        background: #ffffff;
+        color: #07706e;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .filter-ponsel .judul-filter.aktif {
+        background: #07706e;
+        color: #ffffff;
+        text-decoration: none;
+    }
+
+    .pembungkus {
+        overflow-x: visible;
+    }
+
+    table {
+        min-width: 0;
+        table-layout: auto;
+        border-spacing: 0;
+    }
+
+    colgroup,
+    thead {
+        display: none;
+    }
+
+    tbody,
+    tr {
+        display: block;
+    }
+
+    tr {
+        margin-bottom: 10px;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+
+    td {
+        display: grid;
+        grid-template-columns: minmax(96px, 40%) 1fr;
+        gap: 8px;
+        align-items: center;
+        padding: 6px 12px;
+        border-radius: 0 !important;
+        text-align: left !important;
+    }
+
+    td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #52514e;
+    }
+
+    td.kode {
+        white-space: normal;
+    }
+
+    td.kosong {
+        display: block;
+        text-align: center !important;
+        border-radius: 10px !important;
+    }
+
+    td.kosong::before {
+        content: none;
+    }
+
+    .tombol-baris {
+        justify-self: start;
+    }
+
+    .bawah {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+    }
+
+    .halaman {
+        justify-content: center;
+    }
+
+    .ekspor {
+        width: 100%;
+    }
+}
