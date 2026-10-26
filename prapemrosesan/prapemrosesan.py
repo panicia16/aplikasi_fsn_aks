@@ -241,10 +241,10 @@ def proses_kartu_stok(df_mentah):
     penjualan_valid["total_hapus"] = penjualan_valid["total_hapus"].fillna(0)
     penjualan_valid["keluar_bersih"] = penjualan_valid["total_keluar"] - penjualan_valid["total_hapus"]
 
-    # penjualan valid hanya yang penjualan bersihnya positif
+    # penjualan valid 
     penjualan_valid = penjualan_valid[penjualan_valid["keluar_bersih"] > 0]
 
-    # pembelian valid hanya yang pembelian bersihnya positif
+    # pembelian valid 
     pembelian_valid = pembelian_bersih[pembelian_bersih["total_masuk"] > 0].copy()
 
     frekuensi_penjualan = penjualan_valid.groupby("kode_obat").size().rename("frekuensi_penjualan")
@@ -308,7 +308,7 @@ def proses_kartu_stok(df_mentah):
     data_agregat["tanggal_terakhir_masuk"] = pd.to_datetime(data_agregat["tanggal_terakhir_masuk"], errors="coerce")
     data_agregat["tanggal_terakhir_keluar"] = pd.to_datetime(data_agregat["tanggal_terakhir_keluar"], errors="coerce")
 
-    # stok awal dan stok akhir sebagai informasi saja dan tidak masuk model
+    # stok awal dan stok akhir
     data_stok = df_non_konsinyasi.sort_values(["kode_obat", "tanggal"]).copy()
 
     stok_awal = data_stok.drop_duplicates(subset="kode_obat", keep="first")[["kode_obat", "stok_awal"]].copy()

@@ -192,8 +192,7 @@ export default function (komponen) {
     const tombolSelanjutnya = buatElemen("button", "", "Selanjutnya");
     navigasi.append(tombolSebelumnya, tulisanHalaman, tombolSelanjutnya);
     barisBawah.append(keterangan, navigasi);
-
-    // tombol ekspor excel    const areaEkspor = buatElemen("div", "area-ekspor");
+    const areaEkspor = buatElemen("div", "area-ekspor");
     const tombolEkspor = buatElemen("button", "ekspor", "Ekspor ke Excel");
     areaEkspor.append(tombolEkspor);
 

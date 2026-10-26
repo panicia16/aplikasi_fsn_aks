@@ -51,7 +51,6 @@ NAMA_BULAN = {
     7: "Jul", 8: "Agu", 9: "Sep", 10: "Okt", 11: "Nov", 12: "Des",
 }
 
-
 # pindah ke halaman lain
 def pindah_halaman(nama_halaman):
     st.session_state["halaman"] = nama_halaman
@@ -61,25 +60,21 @@ def pindah_halaman(nama_halaman):
         del st.query_params["kode"]
     st.rerun()
 
-
 # membuka file model sekali saja lalu disimpan di memori
 @st.cache_resource(show_spinner=False)
 def muat_model():
     return joblib.load(LOKASI_MODEL)
-
 
 # menyimpan hasil unggahan terakhir ke folder penyimpanan
 def simpan_data(data):
     os.makedirs(os.path.dirname(LOKASI_DATA), exist_ok=True)
     joblib.dump(data, LOKASI_DATA)
 
-
 # membuka hasil unggahan terakhir kalau filenya ada
 def muat_data_tersimpan():
     if os.path.exists(LOKASI_DATA):
         return joblib.load(LOKASI_DATA)
     return None
-
 
 # menghapus data yang tersimpan sehingga aplikasi kembali kosong
 def hapus_data():
@@ -93,11 +88,9 @@ def hapus_data():
     if "kode" in st.query_params:
         del st.query_params["kode"]
 
-
 # menulis angka dengan titik sebagai pemisah ribuan, contoh 1250 menjadi 1.250
 def angka(nilai):
     return f"{nilai:,.0f}".replace(",", ".")
-
 
 # mengubah nilai kosong menjadi None dan nilai lain menjadi angka desimal
 def angka_atau_kosong(nilai):
@@ -105,22 +98,18 @@ def angka_atau_kosong(nilai):
         return None
     return float(nilai)
 
-
 # menampilkan judul halaman di tengah
 def judul(teks):
     st.markdown(f'<div class="judul-halaman">{teks}</div>', unsafe_allow_html=True)
-
 
 # mengubah periode bulan menjadi tulisan, contoh 2022-01 menjadi Jan 2022
 def label_bulan(periode):
     return f"{NAMA_BULAN[periode.month]} {periode.year}"
 
-
 # daftar bulan dari tanggal awal sampai tanggal akhir data
 def daftar_periode_data(data):
     ringkasan = data["ringkasan"]
     return pd.period_range(ringkasan["tanggal_awal"], ringkasan["tanggal_akhir"], freq="M")
-
 
 # menjumlahkan transaksi per bulan, bulan tanpa transaksi diisi 0
 def rekap_bulanan(data_transaksi, kolom_jumlah, daftar_periode):
@@ -132,13 +121,11 @@ def rekap_bulanan(data_transaksi, kolom_jumlah, daftar_periode):
     rekap["bulan"] = rekap["periode"].apply(label_bulan)
     return rekap
 
-
 # pesan kalau belum ada data yang diunggah
 def pesan_belum_ada_data():
     st.info("Belum ada data yang diproses. Silakan unggah dataset kartu stok pada menu **Unggah Dataset**.")
     if st.button("Ke Unggah Dataset"):
         pindah_halaman("unggah_data")
-
 
 # menampilkan tabel transaksi di halaman data penjualan dan data pembelian
 def tabel_transaksi(data, jenis, kolom_jumlah, label_jumlah):
