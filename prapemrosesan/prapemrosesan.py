@@ -291,9 +291,9 @@ def proses_kartu_stok(df_mentah):
     data_agregat = data_agregat.merge(active_months, on="kode_obat", how="left")
     data_agregat["active_months"] = data_agregat["active_months"].fillna(0).astype(int)
 
-    # tanggal terakhir masuk dan keluar
+    # tanggal terakhir masuk dan keluar dari transaksi valid
     tanggal_terakhir_masuk = (
-        data_pembelian[is_pembelian.loc[data_pembelian.index]]
+        baris_pembelian_valid
         .groupby("kode_obat")["tanggal"].max().rename("tanggal_terakhir_masuk")
     )
     tanggal_terakhir_keluar = (
