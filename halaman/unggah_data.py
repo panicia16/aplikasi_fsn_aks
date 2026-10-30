@@ -92,7 +92,7 @@ CETAKAN_TOMBOL_UNGGAH = """
 # animasi lingkaran berputar saat data diproses
 ANIMASI_MEMUAT = '<div class="memuat"><div class="lingkaran"></div><div>Memproses data<span class="titik"></span></div></div>'
 
-# Isi cetakan gaya tombol unggah
+# mengisi cetakan gaya tombol unggah
 def gaya_tombol_unggah(nama_wadah, tulisan, warna_latar, warna_tulisan, lebar):
     gaya = CETAKAN_TOMBOL_UNGGAH.replace("NAMA_WADAH", nama_wadah)
     gaya = gaya.replace("TULISAN_TOMBOL", tulisan)
@@ -106,7 +106,7 @@ def tombol_tengah(tulisan, kunci):
     kolom_tengah = st.columns([1, 1, 1])[1]
     return kolom_tengah.button(tulisan, key=kunci, type="primary", width="stretch")
 
-# pesan gagal dalam mengosongkan pilihan file, lalu memuat ulang halaman
+# menyimpan pesan gagal, mengosongkan file uploader, dan memuat ulang halaman
 def unggah_gagal(daftar_pesan):
     st.session_state["pesan_gagal"] = daftar_pesan
     st.session_state["kunci_uploader"] += 1

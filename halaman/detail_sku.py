@@ -69,7 +69,7 @@ def teks_angka(nilai):
     return angka(nilai)
 
 
-# kartu putih -> berisi informasi obat
+# kartu putih berisi informasi obat, dibuat jdi dua kolom (6 baris di kiri, 6 baris di kanan)
 def kartu_informasi(sku, kode):
     # peletakan enam informasi pertama di kolom kiri, enam berikutnya di kolom kanan
     daftar_informasi = [
@@ -145,7 +145,7 @@ def grafik_transaksi(jual_obat, beli_obat, daftar_periode):
 
 # menyiapkan isi tabel riwayat transaksi satu obat
 def pengaturan_riwayat(data_transaksi, jenis, kolom_bukti, judul_bukti, kolom_jumlah, judul_jumlah, kategori, versi):
-    # default-> transaksi terbaru ditaruh paling atas
+    # transaksi terbaru ditaruh paling atas
     data_transaksi = data_transaksi.sort_values("tanggal", ascending=False)
     data_transaksi = data_transaksi.rename(columns={kolom_bukti: "bukti", kolom_jumlah: "jumlah"})
 

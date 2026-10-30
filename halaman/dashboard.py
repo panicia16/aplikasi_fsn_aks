@@ -80,7 +80,7 @@ def kotak_jumlah_sku(data_sku):
     jumlah_per_kategori = data_sku["hasil_klasifikasi"].value_counts()
     total_sku = len(data_sku)
 
-    # isi kotaknya total sku lalu setiap kategori
+    # isi kotaknya total sku setiap kategori
     isi_kotak = [("Total SKU", total_sku)]
     for kategori in URUTAN_FSN:
         isi_kotak.append((kategori, int(jumlah_per_kategori.get(kategori, 0))))
