@@ -294,23 +294,25 @@ export default function (komponen) {
         const daftar = buatElemen("div", "daftar");
 
         // kotak cari kecil kalau pilihannya banyak
+        const cariPilihan = buatElemen("input", "cari-pilihan");
         if (semuaPilihan.length > 8) {
-            const cariPilihan = buatElemen("input", "cari-pilihan");
             cariPilihan.placeholder = "Cari di daftar";
             cariPilihan.oninput = () => {
                 const kata = cariPilihan.value.toLowerCase();
                 daftar.querySelectorAll("label[data-nilai]").forEach((label) => {
                     label.hidden = !label.dataset.nilai.toLowerCase().includes(kata);
                 });
+                perbaruiCentangSemua();
             };
             panel.append(cariPilihan);
         }
 
-        // centang "pilih semua"
+        // centang "pilih semua", berubah menjadi "pilih semua hasil pencarian" saat kotak cari diisi
         const labelSemua = buatElemen("label", "semua");
         const centangSemua = buatElemen("input");
         centangSemua.type = "checkbox";
-        labelSemua.append(centangSemua, document.createTextNode("Pilih semua"));
+        const tulisanSemua = document.createTextNode("Pilih semua");
+        labelSemua.append(centangSemua, tulisanSemua);
         daftar.append(labelSemua);
 
         // satu centang untuk setiap pilihan
@@ -323,17 +325,44 @@ export default function (komponen) {
             centang.dataset.nilai = nilai;
             centang.onchange = () => ubahFilter(() => {
                 filter[kunci] = daftarCentang.filter((c) => c.checked).map((c) => c.dataset.nilai);
-                centangSemua.checked = filter[kunci].length === semuaPilihan.length;
+                perbaruiCentangSemua();
             });
             label.append(centang, document.createTextNode(nilai));
             daftar.append(label);
             return centang;
         });
 
-        centangSemua.checked = filter[kunci].length === semuaPilihan.length;
+        // pilihan yang sedang terlihat (semua pilihan kalau kotak cari kosong)
+        const sedangDicari = () => cariPilihan.value.trim() !== "";
+        const centangTerlihat = () => daftarCentang.filter((centang) => !centang.parentElement.hidden);
+
+        // centang "pilih semua" aktif kalau semua pilihan sudah dicentang,
+        // sedangkan saat mencari aktif kalau yang dicentang hanya hasil pencariannya
+        function perbaruiCentangSemua() {
+            const terlihat = centangTerlihat();
+            const tersembunyi = daftarCentang.filter((centang) => !terlihat.includes(centang));
+            tulisanSemua.textContent = sedangDicari() ? "Pilih semua hasil pencarian" : "Pilih semua";
+            centangSemua.checked = terlihat.length > 0
+                && terlihat.every((centang) => centang.checked)
+                && tersembunyi.every((centang) => !centang.checked);
+        }
+
+        perbaruiCentangSemua();
         centangSemua.onchange = () => ubahFilter(() => {
-            daftarCentang.forEach((centang) => { centang.checked = centangSemua.checked; });
-            filter[kunci] = centangSemua.checked ? [...semuaPilihan] : [];
+            if (sedangDicari()) {
+                // saat mencari: dicentang berarti hanya hasil pencarian yang dipilih,
+                // tidak dicentang berarti hasil pencarian dilepas dari pilihan
+                const terlihat = centangTerlihat();
+                if (centangSemua.checked) {
+                    daftarCentang.forEach((centang) => { centang.checked = terlihat.includes(centang); });
+                } else {
+                    terlihat.forEach((centang) => { centang.checked = false; });
+                }
+            } else {
+                daftarCentang.forEach((centang) => { centang.checked = centangSemua.checked; });
+            }
+            filter[kunci] = daftarCentang.filter((c) => c.checked).map((c) => c.dataset.nilai);
+            perbaruiCentangSemua();
         });
         panel.append(daftar);
     }
