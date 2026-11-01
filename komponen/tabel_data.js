@@ -298,9 +298,12 @@ export default function (komponen) {
         if (semuaPilihan.length > 8) {
             cariPilihan.placeholder = "Cari di daftar";
             cariPilihan.oninput = () => {
-                const kata = cariPilihan.value.toLowerCase();
+                const kata = cariPilihan.value.trim().toLowerCase();
                 daftar.querySelectorAll("label[data-nilai]").forEach((label) => {
-                    label.hidden = !label.dataset.nilai.toLowerCase().includes(kata);
+                    const cocok = label.dataset.nilai.toLowerCase().includes(kata);
+                    // disembunyikan langsung lewat style supaya tidak kalah oleh aturan css lain
+                    label.hidden = !cocok;
+                    label.style.display = cocok ? "" : "none";
                 });
                 perbaruiCentangSemua();
             };
@@ -350,7 +353,7 @@ export default function (komponen) {
         perbaruiCentangSemua();
         centangSemua.onchange = () => ubahFilter(() => {
             if (sedangDicari()) {
-                // saat mencari: dicentang berarti hanya hasil pencarian yang dipilih,
+                // saat mencari:dicentang berarti hanya hasil pencarian yang dipilih,
                 // tidak dicentang berarti hasil pencarian dilepas dari pilihan
                 const terlihat = centangTerlihat();
                 if (centangSemua.checked) {
