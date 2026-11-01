@@ -104,6 +104,14 @@ CETAKAN_TOMBOL_UNGGAH = """
 # label tempat unggah file (tidak ditampilkan), dipakai sama pada kotak unggah utama dan tombol unggah lagi
 LABEL_UPLOADER = "Unggah file dataset"
 
+# dipakai saat mengganti dataset: begitu file dibatalkan, kotak unggah dan info file tidak ditampilkan
+GAYA_SEMBUNYI_SAAT_BATAL = """
+<style>
+.st-key-panel_unggah:has([data-testid="stFileUploaderDropzoneInstructions"]) .st-key-wadah_uploader,
+.st-key-panel_unggah:has([data-testid="stFileUploaderDropzoneInstructions"]) .st-key-info_file_baru { visibility: hidden; }
+</style>
+"""
+
 # animasi lingkaran berputar saat data diproses
 ANIMASI_MEMUAT = '<div class="memuat"><div class="lingkaran"></div><div>Memproses data<span class="titik"></span></div></div>'
 
@@ -159,7 +167,6 @@ def tampilan_selesai():
         if ringkasan.get("peringatan_periode"):
             st.warning(ringkasan["peringatan_periode"])
         # tiga tombol sejajar dengan lebar yang sama: lihat data, unggah lagi, hapus data
-        st.markdown(gaya_tombol_unggah("wadah_unggah_lagi", "Unggah Lagi", "#ffffff", "#07706e", "100%"), unsafe_allow_html=True)
         _, kolom_lihat, kolom_unggah, kolom_hapus, _ = st.columns([1, 2, 2, 2, 1], vertical_alignment="center")
 
         with kolom_lihat.container(key="tombol_lihat"):
@@ -246,7 +253,9 @@ def proses_file(file_unggahan):
 
 
 def halaman_unggah():
-    st.markdown(GAYA_UNGGAH, unsafe_allow_html=True)
+    # gaya tombol unggah lagi selalu dimuat sejak awal, supaya tombol tidak sempat tampil sebagai kotak unggah besar saat ringkasan dataset muncul
+    gaya_unggah_lagi = gaya_tombol_unggah("wadah_unggah_lagi", "Unggah Lagi", "#ffffff", "#07706e", "100%")
+    st.markdown(GAYA_UNGGAH + gaya_unggah_lagi, unsafe_allow_html=True)
     judul("UNGGAH DATASET")
 
     # file yang sedang dipilih diperiksa sebelum halaman digambar, supaya halaman tidak berkedip
@@ -272,6 +281,9 @@ def halaman_unggah():
                 st.write(pesan)
         else:
             st.markdown("Unggah file kartu stok dalam format **Excel (.xlsx)** dengan periode data **satu tahun**.")
+            # saat mengganti dataset, kotak unggah kosong dan info file disembunyikan begitu tombol x diklik, sehingga yang terlihat langsung ringkasan dataset sebelumnya
+            if st.session_state["data"] is not None:
+                st.markdown(GAYA_SEMBUNYI_SAAT_BATAL, unsafe_allow_html=True)
 
         # tempat memilih file (tampil sebagai tombol pilih file kalau format sebelumnya salah)
         with st.container(key="wadah_uploader"):
@@ -300,6 +312,8 @@ def halaman_unggah():
             st.session_state["pesan_gagal"] = None
             st.rerun()
 
-        st.write(f"File berhasil diunggah: **{file_unggahan.name}**")
-        if tombol_tengah("Unggah dan Proses", "tombol_proses"):
+        with st.container(key="info_file_baru"):
+            st.write(f"File berhasil diunggah: **{file_unggahan.name}**")
+            tombol_proses = tombol_tengah("Unggah dan Proses", "tombol_proses")
+        if tombol_proses:
             proses_file(file_unggahan)
