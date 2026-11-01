@@ -127,6 +127,11 @@ def unggah_gagal(daftar_pesan):
     st.session_state["kunci_uploader"] += 1
     st.rerun()
 
+# dijalankan sebelum halaman digambar ulang, supaya langsung kembali ke ringkasan dataset tanpa berkedip
+def kembali_ke_data_sebelumnya():
+    st.session_state["pesan_gagal"] = None
+    st.session_state["status_unggah"] = "selesai"
+
 # jendela konfirmasi sebelum data dihapus
 @st.dialog("Hapus Data")
 def konfirmasi_hapus():
@@ -244,6 +249,13 @@ def halaman_unggah():
     st.markdown(GAYA_UNGGAH, unsafe_allow_html=True)
     judul("UNGGAH DATASET")
 
+    # file yang sedang dipilih diperiksa sebelum halaman digambar, supaya halaman tidak berkedip
+    # saat berpindah antara ringkasan dataset dan kotak unggah
+    file_terpilih = st.session_state.get(f"uploader_{st.session_state['kunci_uploader']}")
+    if st.session_state["data"] is not None and not st.session_state.get("pesan_gagal"):
+        # ada file baru yang dipilih: tampilkan kotak unggah, tidak ada file: tampilkan ringkasan dataset
+        st.session_state["status_unggah"] = None if file_terpilih is not None else "selesai"
+
     # kalau dataset sudah selesai diproses, tampilkan ringkasannya
     if st.session_state["status_unggah"] == "selesai" and st.session_state["data"] is not None:
         tampilan_selesai()
@@ -276,10 +288,11 @@ def halaman_unggah():
                     st.session_state["status_unggah"] = "selesai"
                     st.rerun()
                 # file baru gagal diproses, pengguna bisa memilih file lain atau kembali ke dataset sebelumnya
-                if tombol_tengah("Kembali ke Data Sebelumnya", "tombol_kembali"):
-                    st.session_state["pesan_gagal"] = None
-                    st.session_state["status_unggah"] = "selesai"
-                    st.rerun()
+                kolom_tengah = st.columns([1, 1, 1])[1]
+                kolom_tengah.button(
+                    "Kembali ke Data Sebelumnya", key="tombol_kembali", type="primary", width="stretch",
+                    on_click=kembali_ke_data_sebelumnya,
+                )
             return
 
         # pesan gagal dihapus setelah file baru dipilih
