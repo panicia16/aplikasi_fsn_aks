@@ -135,11 +135,6 @@ def unggah_gagal(daftar_pesan):
     st.session_state["kunci_uploader"] += 1
     st.rerun()
 
-# dijalankan sebelum halaman digambar ulang, supaya langsung kembali ke ringkasan dataset tanpa berkedip
-def kembali_ke_data_sebelumnya():
-    st.session_state["pesan_gagal"] = None
-    st.session_state["status_unggah"] = "selesai"
-
 # jendela konfirmasi sebelum data dihapus
 @st.dialog("Hapus Data")
 def konfirmasi_hapus():
@@ -253,7 +248,8 @@ def proses_file(file_unggahan):
 
 
 def halaman_unggah():
-    # gaya tombol unggah lagi selalu dimuat sejak awal, supaya tombol tidak sempat tampil sebagai kotak unggah besar saat ringkasan dataset muncul
+    # gaya tombol unggah lagi selalu dimuat sejak awal, supaya tombol tidak sempat tampil
+    # sebagai kotak unggah besar saat ringkasan dataset muncul
     gaya_unggah_lagi = gaya_tombol_unggah("wadah_unggah_lagi", "Unggah Lagi", "#ffffff", "#07706e", "100%")
     st.markdown(GAYA_UNGGAH + gaya_unggah_lagi, unsafe_allow_html=True)
     judul("UNGGAH DATASET")
@@ -281,7 +277,8 @@ def halaman_unggah():
                 st.write(pesan)
         else:
             st.markdown("Unggah file kartu stok dalam format **Excel (.xlsx)** dengan periode data **satu tahun**.")
-            # saat mengganti dataset, kotak unggah kosong dan info file disembunyikan begitu tombol x diklik, sehingga yang terlihat langsung ringkasan dataset sebelumnya
+            # saat mengganti dataset, kotak unggah kosong dan info file disembunyikan begitu tombol x diklik,
+            # sehingga yang terlihat langsung ringkasan dataset sebelumnya tanpa kotak kosong
             if st.session_state["data"] is not None:
                 st.markdown(GAYA_SEMBUNYI_SAAT_BATAL, unsafe_allow_html=True)
 
@@ -293,18 +290,10 @@ def halaman_unggah():
             )
 
         if file_unggahan is None:
-            # dataset sebelumnya masih tersimpan, jadi pengguna bisa kembali ke ringkasannya
-            if st.session_state["data"] is not None:
-                # file baru dibatalkan (tombol x) sebelum diproses, langsung kembali ke ringkasan dataset sebelumnya
-                if not pesan_gagal:
-                    st.session_state["status_unggah"] = "selesai"
-                    st.rerun()
-                # file baru gagal diproses, pengguna bisa memilih file lain atau kembali ke dataset sebelumnya
-                kolom_tengah = st.columns([1, 1, 1])[1]
-                kolom_tengah.button(
-                    "Kembali ke Data Sebelumnya", key="tombol_kembali", type="primary", width="stretch",
-                    on_click=kembali_ke_data_sebelumnya,
-                )
+            # file baru dibatalkan (tombol x) sebelum diproses, langsung kembali ke ringkasan dataset sebelumnya
+            if st.session_state["data"] is not None and not pesan_gagal:
+                st.session_state["status_unggah"] = "selesai"
+                st.rerun()
             return
 
         # pesan gagal dihapus setelah file baru dipilih
