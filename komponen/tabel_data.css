@@ -295,6 +295,10 @@ tr.non .kelas {
     font-weight: 700;
 }
 
+.panel label[hidden] {
+    display: none;
+}
+
 .panel input[type="checkbox"] {
     accent-color: #07706e;
 }
