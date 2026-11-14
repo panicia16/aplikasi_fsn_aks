@@ -5,3 +5,5 @@ scikit-learn==1.6.1
 joblib
 openpyxl
 altair>=5
+pypdfium2
+reportlab

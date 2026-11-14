@@ -176,10 +176,25 @@ def tabel_transaksi(data, jenis, kolom_jumlah, label_jumlah):
             "sisa_stok": 0 if pd.isna(sisa_tertinggi) else float(sisa_tertinggi),
         },
         "cari": {"petunjuk": "Cari kode atau nama obat", "kolom": ["kode_obat", "nama_obat"]},
-        "ekspor": {"nama_file": f"data_{jenis}.xlsx", "nama_lembar": f"Data {jenis.capitalize()}"},
+        "ekspor": {
+            "nama_file": f"data_{jenis}.xlsx",
+            "nama_lembar": f"Data {jenis.capitalize()}",
+            "nama_file_pdf": f"Laporan {jenis.capitalize()} {ringkasan['tanggal_awal']:%d-%m-%Y} sd {ringkasan['tanggal_akhir']:%d-%m-%Y}.pdf",
+        },
         "baris_per_halaman": 25,
         "lebar_minimal": 900,
         "satuan": "transaksi",
         "teks_kosong": "Tidak ada transaksi yang sesuai dengan pencarian atau filter.",
     }
-    tampilkan_tabel(f"tabel_{jenis}", pengaturan_tabel)
+
+    # laporan pdf: ringkasan dan grafik dari seluruh transaksi, sama seperti di halaman
+    # tabel data di bawahnya berisi baris yang sedang tampil di tabel
+    # 10 obat teratas mengikuti periode yang dipilih pada kartu di atas tabel
+    def buat_pdf(nomor_baris_tampil):
+        # diimpor di sini karena laporan.py juga memakai fungsi dari utils.py
+        from laporan import SELURUH_PERIODE, buat_laporan_pdf
+        periode_teratas = st.session_state.get(f"periode_{jenis}", SELURUH_PERIODE)
+        transaksi_tabel = data_transaksi.iloc[list(nomor_baris_tampil)]
+        return buat_laporan_pdf(ringkasan, jenis, data_transaksi, transaksi_tabel, periode_teratas)
+
+    tampilkan_tabel(f"tabel_{jenis}", pengaturan_tabel, buat_pdf=buat_pdf)

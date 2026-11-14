@@ -1,4 +1,4 @@
-# tabel interaktif (pencarian, filter, halaman, dan ekspor excel) yang dipakai di beberapa halaman
+# tabel interaktif (pencarian, filter, halaman, serta ekspor excel dan pdf) yang dipakai di beberapa halaman
 import base64
 import time
 from io import BytesIO
@@ -41,15 +41,26 @@ def buat_file_excel(pengaturan_tabel, nomor_baris_tampil):
     return berkas.getvalue()
 
 
+# jenis file yang dikirim ke browser
+TIPE_EXCEL = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+TIPE_PDF = "application/pdf"
+
+
 # menampilkan tabel, lalu mengembalikan isi tombol yang diklik di baris tabel (misalnya kode obat)
-def tampilkan_tabel(kunci, pengaturan_tabel):
-    # kalau file excel sudah disiapkan, file dikirim ke browser untuk diunduh
-    file_excel = st.session_state.pop(f"excel_{kunci}", None)
-    if file_excel is not None:
-        pengaturan_tabel = dict(pengaturan_tabel)
+# buat_pdf diisi fungsi pembuat pdf jika tabel juga bisa diekspor ke pdf
+def tampilkan_tabel(kunci, pengaturan_tabel, buat_pdf=None):
+    pengaturan_tabel = dict(pengaturan_tabel)
+    if pengaturan_tabel.get("ekspor"):
+        pengaturan_tabel["ekspor"] = {**pengaturan_tabel["ekspor"], "pdf": buat_pdf is not None}
+
+    # kalau file sudah disiapkan, file dikirim ke browser untuk diunduh
+    unduhan = st.session_state.pop(f"unduhan_{kunci}", None)
+    if unduhan is not None:
+        isi_file, nama_file, tipe_file = unduhan
         pengaturan_tabel["unduhan"] = {
-            "isi": base64.b64encode(file_excel).decode(),
-            "nama_file": pengaturan_tabel["ekspor"]["nama_file"],
+            "isi": base64.b64encode(isi_file).decode(),
+            "nama_file": nama_file,
+            "tipe": tipe_file,
             "tanda": str(time.time()),
         }
 
@@ -58,11 +69,19 @@ def tampilkan_tabel(kunci, pengaturan_tabel):
         data=pengaturan_tabel,
         on_tombol_change=lambda: None,
         on_ekspor_change=lambda: None,
+        on_ekspor_pdf_change=lambda: None,
     )
 
-    # tombol ekspor diklik: buat file excel lalu muat ulang halaman supaya file terkirim
+    # tombol ekspor excel diklik: buat file excel lalu muat ulang halaman supaya file terkirim
     if hasil.ekspor is not None:
-        st.session_state[f"excel_{kunci}"] = buat_file_excel(pengaturan_tabel, hasil.ekspor)
+        isi_excel = buat_file_excel(pengaturan_tabel, hasil.ekspor)
+        st.session_state[f"unduhan_{kunci}"] = (isi_excel, pengaturan_tabel["ekspor"]["nama_file"], TIPE_EXCEL)
+        st.rerun()
+
+    # tombol ekspor pdf diklik: buat file pdf dari baris yang sedang tampil
+    if buat_pdf is not None and getattr(hasil, "ekspor_pdf", None) is not None:
+        isi_pdf = buat_pdf(hasil.ekspor_pdf)
+        st.session_state[f"unduhan_{kunci}"] = (isi_pdf, pengaturan_tabel["ekspor"]["nama_file_pdf"], TIPE_PDF)
         st.rerun()
 
     return hasil.tombol

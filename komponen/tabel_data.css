@@ -218,7 +218,9 @@ tr.non .kelas {
 /* tombol ekspor di bawah tengah tabel */
 .area-ekspor {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
+    gap: 12px;
     margin-top: 28px;
 }
 

@@ -1,12 +1,15 @@
 # halaman unggah dataset
+from io import BytesIO
+
 import pandas as pd
 import streamlit as st
+from openpyxl import Workbook
 
-from prapemrosesan.prapemrosesan import FITUR_MODEL, proses_kartu_stok, validasi_format
+from prapemrosesan.prapemrosesan import FITUR_MODEL, KOLOM_WAJIB, proses_kartu_stok, validasi_format
 from utils import LOKASI_MODEL, angka, hapus_data, judul, muat_model, pindah_halaman, simpan_data
 
 
-# tampilan khusus halaman unggah dataset
+# tampilan untuk halaman unggah dataset
 GAYA_UNGGAH = """
 <style>
 /* panel putih tempat unggah file */
@@ -55,18 +58,6 @@ GAYA_UNGGAH = """
 .st-key-wadah_unggah_lagi [data-testid="stFileUploader"] { width: 100%; }
 .st-key-wadah_unggah_lagi [data-testid="stFileUploaderDropzone"] { align-items: stretch; }
 
-/* saat file dipilih lewat tombol unggah lagi, nama file tidak ditampilkan di tombol,
-   tombol hanya bertuliskan "Memuat file..." sampai halaman berpindah ke kotak unggah */
-.st-key-panel_unggah .st-key-wadah_unggah_lagi [data-testid="stFileUploaderDropzone"]:not(:has([data-testid="stFileUploaderDropzoneInstructions"])) {
-    position: relative; min-height: 44px; padding: 0; border: 1px solid #07706e; border-radius: 22px; background-color: #ffffff;
-}
-.st-key-panel_unggah .st-key-wadah_unggah_lagi [data-testid="stFileUploaderDropzone"]:not(:has([data-testid="stFileUploaderDropzoneInstructions"])) > * { display: none; }
-.st-key-panel_unggah .st-key-wadah_unggah_lagi [data-testid="stFileUploaderDropzone"]:not(:has([data-testid="stFileUploaderDropzoneInstructions"]))::after {
-    content: "Memuat file..."; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    color: #07706e; font-size: 0.95rem; font-weight: 600;
-}
-.st-key-wadah_unggah_lagi [data-testid="stFileUploaderFile"] { display: none; }
-
 /* warna tombol lihat data (hijau), unggah lagi (putih), dan hapus data (merah) */
 .st-key-tombol_lihat button { border: 1px solid #07706e; color: #ffffff; background-color: #07706e; }
 .st-key-tombol_lihat button:hover { border-color: #1f9884; color: #ffffff; background-color: #1f9884; }
@@ -74,6 +65,13 @@ GAYA_UNGGAH = """
 .st-key-tombol_hapus button:hover { border-color: #e34948; color: #ffffff; background-color: #e34948; }
 .st-key-tombol_yakin_hapus button { border: none; color: #ffffff; background-color: #e34948; }
 .st-key-tombol_yakin_hapus button:hover { color: #ffffff; background-color: #c0302f; }
+
+/* tautan unduh template: "Belum punya template? Unduh di sini" */
+.st-key-tombol_template { align-items: center; }
+.st-key-tombol_template button { border: none; background-color: transparent; min-height: 0; padding: 0; }
+.st-key-tombol_template button p { color: #52514e; font-weight: 400; }
+.st-key-tombol_template button p strong { color: #07706e; font-weight: 700; text-decoration: underline; }
+.st-key-tombol_template button:hover p strong { color: #1f9884; }
 
 /* tampilan ponsel: jarak di dalam panel lebih kecil */
 @media (max-width: 640px) {
@@ -84,7 +82,7 @@ GAYA_UNGGAH = """
 </style>
 """
 
-# cetakan gaya untuk mengubah kotak unggah menjadi sebuah tombol
+# cetakan kotak unggah jadi tombol
 CETAKAN_TOMBOL_UNGGAH = """
 <style>
 .st-key-panel_unggah .st-key-NAMA_WADAH [data-testid="stFileUploaderDropzone"] { border: none; background-color: transparent; padding: 0; min-height: 0; }
@@ -101,21 +99,36 @@ CETAKAN_TOMBOL_UNGGAH = """
 </style>
 """
 
-# label tempat unggah file (tidak ditampilkan), dipakai sama pada kotak unggah utama dan tombol unggah lagi
-LABEL_UPLOADER = "Unggah file dataset"
+# membuat file template excel kosong, isinya hanya nama kolom yang perlu diisi
+@st.cache_data
+def buat_template_excel():
+    buku = Workbook()
+    lembar = buku.active
+    lembar.title = "Kartu Stok"
+    lembar.append(KOLOM_WAJIB)
 
-# dipakai saat mengganti dataset: begitu file dibatalkan, kotak unggah dan info file tidak ditampilkan
-GAYA_SEMBUNYI_SAAT_BATAL = """
-<style>
-.st-key-panel_unggah:has([data-testid="stFileUploaderDropzoneInstructions"]) .st-key-wadah_uploader,
-.st-key-panel_unggah:has([data-testid="stFileUploaderDropzoneInstructions"]) .st-key-info_file_baru { visibility: hidden; }
-</style>
-"""
+    berkas = BytesIO()
+    buku.save(berkas)
+    return berkas.getvalue()
+
+# tautan unduh template di bawah tempat unggah
+def tombol_template():
+    with st.container(key="tombol_template"):
+        st.download_button(
+            "Belum punya template? **Unduh di sini**",
+            data=buat_template_excel(),
+            file_name="template_kartu_stok.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            type="tertiary",
+            width="content",
+            on_click="ignore",
+        )
+
 
 # animasi lingkaran berputar saat data diproses
 ANIMASI_MEMUAT = '<div class="memuat"><div class="lingkaran"></div><div>Memproses data<span class="titik"></span></div></div>'
 
-# mengisi cetakan gaya tombol unggah sesuai wadah, tulisan, dan warnanya
+# Isi cetakan gaya tombol unggah
 def gaya_tombol_unggah(nama_wadah, tulisan, warna_latar, warna_tulisan, lebar):
     gaya = CETAKAN_TOMBOL_UNGGAH.replace("NAMA_WADAH", nama_wadah)
     gaya = gaya.replace("TULISAN_TOMBOL", tulisan)
@@ -124,12 +137,12 @@ def gaya_tombol_unggah(nama_wadah, tulisan, warna_latar, warna_tulisan, lebar):
     gaya = gaya.replace("LEBAR_TOMBOL", lebar)
     return gaya
 
-# tombol yang diletakkan di tengah panel
+# tombol yang diletakkan di tengah
 def tombol_tengah(tulisan, kunci):
     kolom_tengah = st.columns([1, 1, 1])[1]
     return kolom_tengah.button(tulisan, key=kunci, type="primary", width="stretch")
 
-# menyimpan pesan gagal, mengosongkan pilihan file, lalu memuat ulang halaman
+# pesan gagal dalam mengosongkan pilihan file, lalu memuat ulang halaman
 def unggah_gagal(daftar_pesan):
     st.session_state["pesan_gagal"] = daftar_pesan
     st.session_state["kunci_uploader"] += 1
@@ -161,18 +174,19 @@ def tampilan_selesai():
         st.write(f"Periode data: **{ringkasan['tanggal_awal']:%d-%m-%Y}** s.d. **{ringkasan['tanggal_akhir']:%d-%m-%Y}**")
         if ringkasan.get("peringatan_periode"):
             st.warning(ringkasan["peringatan_periode"])
-        # tiga tombol sejajar dengan lebar yang sama: lihat data, unggah lagi, hapus data
+
+        # tiga tombol lihat data, unggah lagi, hapus data 
+        st.markdown(gaya_tombol_unggah("wadah_unggah_lagi", "Unggah Lagi", "#ffffff", "#07706e", "100%"), unsafe_allow_html=True)
         _, kolom_lihat, kolom_unggah, kolom_hapus, _ = st.columns([1, 2, 2, 2, 1], vertical_alignment="center")
 
         with kolom_lihat.container(key="tombol_lihat"):
             if st.button("Lihat Data", width="stretch"):
                 pindah_halaman("data_klasifikasi")
 
-        # tombol unggah lagi langsung membuka pilihan file
-        # label dan kuncinya sama dengan kotak unggah utama, supaya file yang dipilih langsung tampil di kotak tersebut
+        # tombol unggah lagi
         with kolom_unggah.container(key="wadah_unggah_lagi"):
             file_baru = st.file_uploader(
-                LABEL_UPLOADER, type=["xlsx"], key=f"uploader_{st.session_state['kunci_uploader']}",
+                "Unggah file baru", type=["xlsx"], key=f"uploader_{st.session_state['kunci_uploader']}",
                 label_visibility="collapsed",
             )
 
@@ -184,6 +198,7 @@ def tampilan_selesai():
         if file_baru is not None:
             st.session_state["status_unggah"] = None
             st.rerun()
+
 
 # membaca, memeriksa, mengolah, dan mengklasifikasikan file yang diunggah
 def proses_file(file_unggahan):
@@ -248,18 +263,8 @@ def proses_file(file_unggahan):
 
 
 def halaman_unggah():
-    # gaya tombol unggah lagi selalu dimuat sejak awal, supaya tombol tidak sempat tampil
-    # sebagai kotak unggah besar saat ringkasan dataset muncul
-    gaya_unggah_lagi = gaya_tombol_unggah("wadah_unggah_lagi", "Unggah Lagi", "#ffffff", "#07706e", "100%")
-    st.markdown(GAYA_UNGGAH + gaya_unggah_lagi, unsafe_allow_html=True)
+    st.markdown(GAYA_UNGGAH, unsafe_allow_html=True)
     judul("UNGGAH DATASET")
-
-    # file yang sedang dipilih diperiksa sebelum halaman digambar, supaya halaman tidak berkedip
-    # saat berpindah antara ringkasan dataset dan kotak unggah
-    file_terpilih = st.session_state.get(f"uploader_{st.session_state['kunci_uploader']}")
-    if st.session_state["data"] is not None and not st.session_state.get("pesan_gagal"):
-        # ada file baru yang dipilih: tampilkan kotak unggah, tidak ada file: tampilkan ringkasan dataset
-        st.session_state["status_unggah"] = None if file_terpilih is not None else "selesai"
 
     # kalau dataset sudah selesai diproses, tampilkan ringkasannya
     if st.session_state["status_unggah"] == "selesai" and st.session_state["data"] is not None:
@@ -270,30 +275,32 @@ def halaman_unggah():
     with st.container(border=True, key="panel_unggah"):
         # pesan format tidak sesuai atau petunjuk unggah
         if pesan_gagal:
-            st.markdown(gaya_tombol_unggah("wadah_uploader", "Pilih File", "#07706e", "#ffffff", "auto"), unsafe_allow_html=True)
-            st.markdown("<style>.st-key-wadah_uploader { width: fit-content; margin: 0 auto; }</style>", unsafe_allow_html=True)
             st.markdown('<div class="pesan-gagal">Format File Tidak Sesuai!</div>', unsafe_allow_html=True)
             for pesan in pesan_gagal:
                 st.write(pesan)
+            # tempat unggah berubah menjadi tombol Pilih File di tengah, sama seperti tombol Unggah Lagi
+            st.markdown(gaya_tombol_unggah("wadah_uploader", "Pilih File", "#07706e", "#ffffff", "100%"), unsafe_allow_html=True)
+            st.markdown(
+                "<style>.st-key-wadah_uploader [data-testid='stFileUploader'] { width: 100%; }"
+                ".st-key-wadah_uploader [data-testid='stFileUploaderDropzone'] { align-items: stretch; }</style>",
+                unsafe_allow_html=True,
+            )
+            tempat_uploader = st.columns([1, 1, 1])[1]
         else:
             st.markdown("Unggah file kartu stok dalam format **Excel (.xlsx)** dengan periode data **satu tahun**.")
-            # saat mengganti dataset, kotak unggah kosong dan info file disembunyikan begitu tombol x diklik,
-            # sehingga yang terlihat langsung ringkasan dataset sebelumnya tanpa kotak kosong
-            if st.session_state["data"] is not None:
-                st.markdown(GAYA_SEMBUNYI_SAAT_BATAL, unsafe_allow_html=True)
+            tempat_uploader = st.container()
 
-        # tempat memilih file (tampil sebagai tombol pilih file kalau format sebelumnya salah)
-        with st.container(key="wadah_uploader"):
+        # tempat memilih file
+        with tempat_uploader.container(key="wadah_uploader"):
             file_unggahan = st.file_uploader(
-                LABEL_UPLOADER, type=["xlsx"], key=f"uploader_{st.session_state['kunci_uploader']}",
+                "Drag & drop file dataset di sini", type=["xlsx"], key=f"uploader_{st.session_state['kunci_uploader']}",
                 label_visibility="collapsed",
             )
 
+        # tautan unduh template di bawah tempat unggah
+        tombol_template()
+
         if file_unggahan is None:
-            # file baru dibatalkan (tombol x) sebelum diproses, langsung kembali ke ringkasan dataset sebelumnya
-            if st.session_state["data"] is not None and not pesan_gagal:
-                st.session_state["status_unggah"] = "selesai"
-                st.rerun()
             return
 
         # pesan gagal dihapus setelah file baru dipilih
@@ -301,8 +308,6 @@ def halaman_unggah():
             st.session_state["pesan_gagal"] = None
             st.rerun()
 
-        with st.container(key="info_file_baru"):
-            st.write(f"File berhasil diunggah: **{file_unggahan.name}**")
-            tombol_proses = tombol_tengah("Unggah dan Proses", "tombol_proses")
-        if tombol_proses:
+        st.write(f"File berhasil diunggah: **{file_unggahan.name}**")
+        if tombol_tengah("Unggah dan Proses", "tombol_proses"):
             proses_file(file_unggahan)

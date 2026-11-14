@@ -95,10 +95,10 @@ function saringBaris(semuaBaris, pengaturan, filter) {
     return hasil;
 }
 
-// mengunduh file excel yang dikirim dari python
-function unduhFileExcel(unduhan) {
+// mengunduh file excel atau pdf yang dikirim dari python
+function unduhFile(unduhan) {
     const isiFile = Uint8Array.from(atob(unduhan.isi), (huruf) => huruf.charCodeAt(0));
-    const file = new Blob([isiFile], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const file = new Blob([isiFile], { type: unduhan.tipe });
     const tautan = document.createElement("a");
     tautan.href = URL.createObjectURL(file);
     tautan.download = unduhan.nama_file;
@@ -128,7 +128,7 @@ export default function (komponen) {
     // file excel dari python langsung diunduh (sekali saja untuk setiap file)
     if (pengaturan.unduhan && tempatTabel.tandaUnduhanTerakhir !== pengaturan.unduhan.tanda) {
         tempatTabel.tandaUnduhanTerakhir = pengaturan.unduhan.tanda;
-        unduhFileExcel(pengaturan.unduhan);
+        unduhFile(pengaturan.unduhan);
     }
 
     // wadah utama tabel
@@ -195,6 +195,9 @@ export default function (komponen) {
     const areaEkspor = buatElemen("div", "area-ekspor");
     const tombolEkspor = buatElemen("button", "ekspor", "Ekspor ke Excel");
     areaEkspor.append(tombolEkspor);
+    // tombol ekspor pdf hanya muncul jika diaktifkan dari python
+    const tombolPdf = buatElemen("button", "ekspor", "Ekspor ke PDF");
+    if (pengaturan.ekspor && pengaturan.ekspor.pdf) areaEkspor.append(tombolPdf);
 
     // panel filter yang muncul saat judul kolom diklik
     const panel = buatElemen("div", "panel");
@@ -453,7 +456,11 @@ export default function (komponen) {
         tombolEkspor.textContent = "Menyiapkan file...";
         setTriggerValue("ekspor", barisTampil.map((baris) => baris.nomor_baris));
     };
-
+    tombolPdf.onclick = () => {
+        tombolPdf.disabled = true;
+        tombolPdf.textContent = "Menyiapkan file...";
+        setTriggerValue("ekspor_pdf", barisTampil.map((baris) => baris.nomor_baris));
+    };
     // panel ditutup saat klik di luar panel, dan ikut bergeser saat halaman digulir
     const klikDiLuarPanel = (kejadian) => {
         const jalurKlik = kejadian.composedPath();

@@ -11,7 +11,7 @@ KOLOM_WAJIB = [
     "Stok Awal", "Masuk", "Keluar", "Sisa Stok", "Golongan", "Kategori", "Jenis Obat", "Status"
 ]
 
-# fitur masukan model sesuai urutan saat pelatihan
+# fitur masukan model final sesuai urutan saat pelatihan
 FITUR_MODEL = [
     "golongan", "kategori", "total_masuk", "total_keluar", "frekuensi_transaksi", "active_months"
 ]
