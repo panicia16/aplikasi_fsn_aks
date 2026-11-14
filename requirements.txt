@@ -7,3 +7,4 @@ openpyxl
 altair>=5
 pypdfium2
 reportlab
+streamlit-js-eval
