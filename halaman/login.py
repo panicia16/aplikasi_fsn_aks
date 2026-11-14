@@ -2,6 +2,7 @@
 import hashlib
 
 import streamlit as st
+import streamlit.components.v1 as components
 
 
 # akun untuk masuk ke aplikasi, tanpa database
@@ -13,6 +14,10 @@ PASSWORD = st.secrets["login"]["password"]
 # cookie login: jika "ingat saya" dicentang disimpan 30 hari, jika tidak hilang saat browser ditutup
 NAMA_COOKIE = "fsn_login"
 LAMA_INGAT = 30 * 24 * 60 * 60
+
+# tanda login juga disimpan di alamat halaman (?masuk=...) supaya tidak keluar saat di-refresh,
+# karena Streamlit Cloud tidak meneruskan cookie ke server
+NAMA_PARAMETER = "masuk"
 
 # isi cookie dibuat dari username dan password, jadi cookie tidak berlaku lagi jika password diganti
 TOKEN_INGAT = hashlib.sha256(f"{USERNAME}:{PASSWORD}:apotek-kreator".encode()).hexdigest()
@@ -38,25 +43,22 @@ GAYA_LOGIN = """
 """
 
 
-# mengecek apakah browser menyimpan cookie login yang benar
+# mengecek apakah pengguna masih login saat aplikasi dibuka atau di-refresh
 def login_diingat():
     # di komputer sendiri, cookie bisa langsung dibaca oleh server
     if st.context.cookies.get(NAMA_COOKIE) == TOKEN_INGAT:
+        st.query_params[NAMA_PARAMETER] = TOKEN_INGAT
         return True
 
-    # di Streamlit Cloud, cookie tidak sampai ke server,
-    # jadi isi cookie dikirim lewat alamat halaman (?masuk=...) oleh skrip di halaman login
-    token = st.query_params.get("masuk")
-    if token is None:
-        return False
-
-    # token langsung dihapus dari alamat supaya tidak terlihat
-    del st.query_params["masuk"]
+    # di Streamlit Cloud, tanda login dibaca dari alamat halaman
+    token = st.query_params.get(NAMA_PARAMETER)
     if token == TOKEN_INGAT:
         return True
 
-    # token lama sudah tidak berlaku (misalnya password diganti), cookie dihapus
-    st.session_state["aksi_cookie"] = "hapus"
+    # tanda login lama sudah tidak berlaku (misalnya password diganti), jadi dihapus
+    if token is not None:
+        del st.query_params[NAMA_PARAMETER]
+        st.session_state["aksi_cookie"] = "hapus"
     return False
 
 
@@ -71,43 +73,52 @@ def jalankan_skrip_cookie():
         isi_cookie = f"{NAMA_COOKIE}={TOKEN_INGAT}"
     elif aksi == "hapus":
         isi_cookie = f"{NAMA_COOKIE}=; max-age=0"
-        # tanda supaya halaman login tidak membaca cookie lagi
-        st.session_state["cookie_dihapus"] = True
     else:
         return
 
-    with st.container(key="wadah_cookie"):
-        st.html(
-            f'<script>document.cookie = "{isi_cookie}; path=/; SameSite=Lax" + '
-            f'(location.protocol === "https:" ? "; Secure" : "");</script>',
-            unsafe_allow_javascript=True,
-        )
-
-
-# membaca cookie di browser, lalu mengirimnya ke server lewat alamat halaman
-# dipakai karena Streamlit Cloud tidak meneruskan cookie ke server
-def kirim_cookie_ke_server():
-    st.html(
-        """<script>
-        let jendela = window;
-        try { if (window.top.location.href) { jendela = window.top; } } catch (e) {}
-        const cookie = document.cookie.match(/(?:^|; )""" + NAMA_COOKIE + """=([a-f0-9]+)/);
-        const alamat = new URL(jendela.location.href);
-        if (cookie && !alamat.searchParams.has("masuk")) {
-            alamat.searchParams.set("masuk", cookie[1]);
-            jendela.location.replace(alamat.toString());
-        }
+    # skrip dijalankan di browser
+    # cookie dipakai saat aplikasi dijalankan di komputer sendiri,
+    # localStorage dipakai untuk "ingat saya" saat aplikasi dijalankan di Streamlit Cloud
+    simpan = "localStorage.setItem('" + NAMA_COOKIE + "', '" + TOKEN_INGAT + "');" if aksi == "ingat" else ""
+    hapus = "localStorage.removeItem('" + NAMA_COOKIE + "');" if aksi in ("sesi", "hapus") else ""
+    components.html(
+        f"""<script>
+        const dok = window.parent.document;
+        dok.cookie = "{isi_cookie}; path=/; SameSite=Lax" + (window.parent.location.protocol === "https:" ? "; Secure" : "");
+        {simpan}
+        {hapus}
         </script>""",
-        unsafe_allow_javascript=True,
+        height=0,
+    )
+    if aksi == "hapus":
+        # tanda supaya halaman login tidak membaca "ingat saya" lagi
+        st.session_state["login_dihapus"] = True
+
+
+# membaca "ingat saya" yang tersimpan di browser,
+# lalu membuka ulang aplikasi dengan tanda login di alamat halaman
+def baca_ingat_saya():
+    components.html(
+        f"""<script>
+        let jendela = window.parent;
+        try {{ if (window.top.location.href) {{ jendela = window.top; }} }} catch (e) {{}}
+        const token = localStorage.getItem("{NAMA_COOKIE}");
+        const alamat = new URL(jendela.location.href);
+        if (token && !alamat.searchParams.has("{NAMA_PARAMETER}")) {{
+            alamat.searchParams.set("{NAMA_PARAMETER}", token);
+            jendela.location.replace(alamat.toString());
+        }}
+        </script>""",
+        height=0,
     )
 
 
 def halaman_login():
     st.markdown(GAYA_LOGIN, unsafe_allow_html=True)
 
-    # jika masih ada cookie login (misalnya setelah halaman di-refresh), pengguna langsung masuk kembali
-    if not st.session_state.get("cookie_dihapus"):
-        kirim_cookie_ke_server()
+    # jika "ingat saya" pernah dicentang, pengguna langsung masuk kembali
+    if not st.session_state.get("login_dihapus"):
+        baca_ingat_saya()
 
     # kotak login di tengah layar
     _, tengah, _ = st.columns([1, 1.2, 1])
@@ -130,6 +141,8 @@ def halaman_login():
             elif username == USERNAME and password == PASSWORD:
                 # tanda sudah login disimpan selama aplikasi dibuka
                 st.session_state["sudah_login"] = True
+                # tanda login disimpan di alamat halaman supaya tidak keluar saat di-refresh
+                st.query_params[NAMA_PARAMETER] = TOKEN_INGAT
                 # cookie login disimpan, lama simpannya tergantung "ingat saya"
                 st.session_state["aksi_cookie"] = "ingat" if ingat_saya else "sesi"
                 st.rerun()
