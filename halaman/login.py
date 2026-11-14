@@ -3,6 +3,7 @@ import hashlib
 
 import streamlit as st
 import streamlit.components.v1 as components
+from streamlit_js_eval import streamlit_js_eval
 
 
 # akun untuk masuk ke aplikasi
@@ -58,6 +59,7 @@ def login_diingat():
 
 
 # menyimpan atau menghapus tanda login di browser
+# skrip ditampilkan di setiap halaman selama login, supaya pasti sempat dijalankan oleh browser
 def jalankan_skrip_cookie():
     if st.session_state.pop("aksi_cookie", None) == "hapus":
         # keluar dari aplikasi: cookie dan "ingat saya" dihapus
@@ -85,21 +87,14 @@ def jalankan_skrip_cookie():
     components.html(f"<script>{skrip}</script>", height=0)
 
 
-# membaca "ingat saya" yang tersimpan di browser, lalu membuka ulang aplikasi dengan tanda login di alamat halaman
+# membaca "ingat saya" yang tersimpan di browser (localStorage) hasilnya dikirim ke server, karena di Streamlit Cloud cookie tidak sampai ke server
 def baca_ingat_saya():
-    components.html(
-        f"""<script>
-        let jendela = window.parent;
-        try {{ if (window.top.location.href) {{ jendela = window.top; }} }} catch (e) {{}}
-        const token = localStorage.getItem("{NAMA_COOKIE}");
-        const alamat = new URL(jendela.location.href);
-        if (token && !alamat.searchParams.has("{NAMA_PARAMETER}")) {{
-            alamat.searchParams.set("{NAMA_PARAMETER}", token);
-            jendela.location.replace(alamat.toString());
-        }}
-        </script>""",
-        height=0,
-    )
+    token = streamlit_js_eval(js_expressions=f"localStorage.getItem('{NAMA_COOKIE}')", key="baca_ingat_saya")
+    if token == TOKEN_INGAT:
+        st.session_state["sudah_login"] = True
+        # tanda login disimpan di alamat halaman supaya tidak keluar saat di-refresh
+        st.query_params[NAMA_PARAMETER] = TOKEN_INGAT
+        st.rerun()
 
 
 def halaman_login():
