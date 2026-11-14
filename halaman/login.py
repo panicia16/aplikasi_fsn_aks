@@ -4,7 +4,9 @@ import hashlib
 import streamlit as st
 
 
-# akun untuk masuk ke aplikasi
+# akun untuk masuk ke aplikasi, tanpa database
+# username dan password disimpan di secrets (file .streamlit/secrets.toml atau menu Secrets di Streamlit Cloud)
+# supaya tidak terlihat di kode yang diunggah ke GitHub
 USERNAME = st.secrets["login"]["username"]
 PASSWORD = st.secrets["login"]["password"]
 
@@ -38,7 +40,24 @@ GAYA_LOGIN = """
 
 # mengecek apakah browser menyimpan cookie login yang benar
 def login_diingat():
-    return st.context.cookies.get(NAMA_COOKIE) == TOKEN_INGAT
+    # di komputer sendiri, cookie bisa langsung dibaca oleh server
+    if st.context.cookies.get(NAMA_COOKIE) == TOKEN_INGAT:
+        return True
+
+    # di Streamlit Cloud, cookie tidak sampai ke server,
+    # jadi isi cookie dikirim lewat alamat halaman (?masuk=...) oleh skrip di halaman login
+    token = st.query_params.get("masuk")
+    if token is None:
+        return False
+
+    # token langsung dihapus dari alamat supaya tidak terlihat
+    del st.query_params["masuk"]
+    if token == TOKEN_INGAT:
+        return True
+
+    # token lama sudah tidak berlaku (misalnya password diganti), cookie dihapus
+    st.session_state["aksi_cookie"] = "hapus"
+    return False
 
 
 # menyimpan atau menghapus cookie di browser, dijalankan sekali setelah login atau keluar
@@ -52,6 +71,8 @@ def jalankan_skrip_cookie():
         isi_cookie = f"{NAMA_COOKIE}={TOKEN_INGAT}"
     elif aksi == "hapus":
         isi_cookie = f"{NAMA_COOKIE}=; max-age=0"
+        # tanda supaya halaman login tidak membaca cookie lagi
+        st.session_state["cookie_dihapus"] = True
     else:
         return
 
@@ -63,8 +84,30 @@ def jalankan_skrip_cookie():
         )
 
 
+# membaca cookie di browser, lalu mengirimnya ke server lewat alamat halaman
+# dipakai karena Streamlit Cloud tidak meneruskan cookie ke server
+def kirim_cookie_ke_server():
+    st.html(
+        """<script>
+        let jendela = window;
+        try { if (window.top.location.href) { jendela = window.top; } } catch (e) {}
+        const cookie = document.cookie.match(/(?:^|; )""" + NAMA_COOKIE + """=([a-f0-9]+)/);
+        const alamat = new URL(jendela.location.href);
+        if (cookie && !alamat.searchParams.has("masuk")) {
+            alamat.searchParams.set("masuk", cookie[1]);
+            jendela.location.replace(alamat.toString());
+        }
+        </script>""",
+        unsafe_allow_javascript=True,
+    )
+
+
 def halaman_login():
     st.markdown(GAYA_LOGIN, unsafe_allow_html=True)
+
+    # jika masih ada cookie login (misalnya setelah halaman di-refresh), pengguna langsung masuk kembali
+    if not st.session_state.get("cookie_dihapus"):
+        kirim_cookie_ke_server()
 
     # kotak login di tengah layar
     _, tengah, _ = st.columns([1, 1.2, 1])
